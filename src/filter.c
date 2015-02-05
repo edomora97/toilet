@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <caca.h>
+#include <time.h>
 
 #include "toilet.h"
 #include "filter.h"
@@ -30,6 +31,8 @@
 static void filter_crop(context_t *);
 static void filter_gay(context_t *);
 static void filter_metal(context_t *);
+static void filter_anaglyph(context_t *);
+static void filter_randomcol(context_t *);
 static void filter_flip(context_t *);
 static void filter_flop(context_t *);
 static void filter_180(context_t *);
@@ -48,6 +51,8 @@ const lookup[] =
     { "crop", filter_crop, "crop unused blanks" },
     { "gay", filter_gay, "add a rainbow colour effect" },
     { "metal", filter_metal, "add a metallic colour effect" },
+    { "anaglyph", filter_anaglyph, "add an anaglyph effect" },
+    { "randomcol", filter_randomcol, "add a random colout effect" },
     { "flip", filter_flip, "flip horizontally" },
     { "flop", filter_flop, "flip vertically" },
     { "rotate", filter_180, NULL }, /* backwards compatibility */
@@ -205,6 +210,65 @@ static void filter_gay(context_t *cx)
         {
             caca_set_color_ansi(cx->torender,
                                  rainbow[(x / 2 + y + cx->lines) % 6],
+                                 CACA_TRANSPARENT);
+            caca_put_char(cx->torender, x, y, ch);
+        }
+    }
+}
+
+static void filter_anaglyph(context_t *cx)
+{
+    unsigned int x, y, w, h;
+
+    w = caca_get_canvas_width(cx->torender);
+    h = caca_get_canvas_height(cx->torender);
+
+    for(y = 0; y < h; y++)
+        for(x = 0; x < w; x++)
+    {
+        unsigned long int ch = caca_get_char(cx->torender, x, y);
+        if((ch != (unsigned char)' ') &&
+           (caca_attr_to_ansi_fg(caca_get_attr(cx->torender, x, y)) != CACA_LIGHTRED) &&
+           (caca_attr_to_ansi_fg(caca_get_attr(cx->torender, x, y)) != CACA_LIGHTCYAN))
+        {
+            if((x > 0) && (caca_get_char(cx->torender, x - 1, y) == (unsigned char)' '))
+            {
+                caca_set_color_ansi(cx->torender, CACA_LIGHTRED, CACA_TRANSPARENT);
+                caca_put_char(cx->torender, x - 1, y, ch);
+            }
+            if((x < (w - 1)) && (caca_get_char(cx->torender, x + 1, y) == (unsigned char)' '))
+            {
+                caca_set_color_ansi(cx->torender, CACA_LIGHTCYAN, CACA_TRANSPARENT);
+                caca_put_char(cx->torender, x + 1, y, ch);
+            }
+        }
+    }
+}
+
+static void filter_randomcol(context_t *cx)
+{
+    srand(time(NULL));
+    static unsigned char const colours[] =
+    {
+        CACA_BLACK, CACA_BLUE, CACA_GREEN, CACA_CYAN,
+        CACA_RED, CACA_MAGENTA, CACA_BROWN, CACA_LIGHTGRAY,
+        CACA_DARKGRAY, CACA_LIGHTBLUE, CACA_LIGHTGREEN,
+        CACA_LIGHTCYAN, CACA_LIGHTRED, CACA_LIGHTMAGENTA,
+        CACA_YELLOW, CACA_WHITE, CACA_DEFAULT,
+    };
+    unsigned int x, y, w, h;
+
+    w = caca_get_canvas_width(cx->torender);
+    h = caca_get_canvas_height(cx->torender);
+
+    for(y = 0; y < h; y++)
+        for(x = 0; x < w; x++)
+    {
+        unsigned long int ch = caca_get_char(cx->torender, x, y);
+        if(ch != (unsigned char)' ')
+        {
+            caca_set_color_ansi(cx->torender,
+                                 colours[rand()%17],
                                  CACA_TRANSPARENT);
             caca_put_char(cx->torender, x, y, ch);
         }
