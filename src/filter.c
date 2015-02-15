@@ -296,7 +296,7 @@ static void filter_pois(context_t *cx)
         if(ch != (unsigned char)' ')
         {
             unsigned char colour = CACA_BLUE;
-            if((rand() % 5) == 0)
+            if((rand() % 5) == 2)
                 colour = CACA_RED;
             caca_set_color_ansi(cx->torender,
                                  colour,
