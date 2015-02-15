@@ -33,12 +33,14 @@ static void filter_gay(context_t *);
 static void filter_metal(context_t *);
 static void filter_anaglyph(context_t *);
 static void filter_randomcol(context_t *);
+static void filter_pois(context_t *);
 static void filter_flip(context_t *);
 static void filter_flop(context_t *);
 static void filter_180(context_t *);
 static void filter_left(context_t *);
 static void filter_right(context_t *);
 static void filter_border(context_t *);
+static void filter_random(context_t *);
 
 struct
 {
@@ -52,7 +54,8 @@ const lookup[] =
     { "gay", filter_gay, "add a rainbow colour effect" },
     { "metal", filter_metal, "add a metallic colour effect" },
     { "anaglyph", filter_anaglyph, "add an anaglyph effect" },
-    { "randomcol", filter_randomcol, "add a random colout effect" },
+    { "randomcol", filter_randomcol, "add a random colour effect" },
+    { "pois", filter_pois, "add a pois effect to the text" },
     { "flip", filter_flip, "flip horizontally" },
     { "flop", filter_flop, "flip vertically" },
     { "rotate", filter_180, NULL }, /* backwards compatibility */
@@ -60,6 +63,7 @@ const lookup[] =
     { "left", filter_left, "rotate 90 degrees counterclockwise" },
     { "right", filter_right, "rotate 90 degrees clockwise" },
     { "border", filter_border, "surround text with a border" },
+	{ "random", filter_random, "select a random filter from the available ones" },
 };
 
 int filter_list(void)
@@ -223,6 +227,8 @@ static void filter_anaglyph(context_t *cx)
     w = caca_get_canvas_width(cx->torender);
     h = caca_get_canvas_height(cx->torender);
 
+    caca_set_canvas_boundaries(cx->torender, 0, 0, w + 1, h);
+
     for(y = 0; y < h; y++)
         for(x = 0; x < w; x++)
     {
@@ -236,7 +242,7 @@ static void filter_anaglyph(context_t *cx)
                 caca_set_color_ansi(cx->torender, CACA_LIGHTRED, CACA_TRANSPARENT);
                 caca_put_char(cx->torender, x - 1, y, ch);
             }
-            if((x < (w - 1)) && (caca_get_char(cx->torender, x + 1, y) == (unsigned char)' '))
+            if((x < w) && (caca_get_char(cx->torender, x + 1, y) == (unsigned char)' '))
             {
                 caca_set_color_ansi(cx->torender, CACA_LIGHTCYAN, CACA_TRANSPARENT);
                 caca_put_char(cx->torender, x + 1, y, ch);
@@ -247,7 +253,7 @@ static void filter_anaglyph(context_t *cx)
 
 static void filter_randomcol(context_t *cx)
 {
-    srand(time(NULL));
+    srand((time)NULL);
     static unsigned char const colours[] =
     {
         CACA_BLACK, CACA_BLUE, CACA_GREEN, CACA_CYAN,
@@ -268,7 +274,32 @@ static void filter_randomcol(context_t *cx)
         if(ch != (unsigned char)' ')
         {
             caca_set_color_ansi(cx->torender,
-                                 colours[rand()%17],
+                                 colours[rand() % 17],
+                                 CACA_TRANSPARENT);
+            caca_put_char(cx->torender, x, y, ch);
+        }
+    }
+}
+
+static void filter_pois(context_t *cx)
+{
+    srand((time)NULL);
+    unsigned int x, y, w, h;
+
+    w = caca_get_canvas_width(cx->torender);
+    h = caca_get_canvas_height(cx->torender);
+
+    for(y = 0; y < h; y++)
+        for(x = 0; x < w; x++)
+    {
+        unsigned long int ch = caca_get_char(cx->torender, x, y);
+        if(ch != (unsigned char)' ')
+        {
+            unsigned char colour = CACA_BLUE;
+            if((rand() % 5) == 0)
+                colour = CACA_RED;
+            caca_set_color_ansi(cx->torender,
+                                 colour,
                                  CACA_TRANSPARENT);
             caca_put_char(cx->torender, x, y, ch);
         }
@@ -312,3 +343,8 @@ static void filter_border(context_t *cx)
     caca_draw_cp437_box(cx->torender, 0, 0, w + 2, h + 2);
 }
 
+static void filter_random(context_t *cx)
+{
+    srand((time)NULL);
+    lookup[rand() % ((sizeof(lookup) / sizeof(lookup[0])) - 1)].function(cx);
+}
