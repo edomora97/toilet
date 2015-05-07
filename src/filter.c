@@ -63,7 +63,7 @@ const lookup[] =
     { "left", filter_left, "rotate 90 degrees counterclockwise" },
     { "right", filter_right, "rotate 90 degrees clockwise" },
     { "border", filter_border, "surround text with a border" },
-	{ "random", filter_random, "select a random filter from the available ones" },
+    { "random", filter_random, "select a random filter from the available ones" },
 };
 
 int filter_list(void)
